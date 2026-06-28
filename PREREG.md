@@ -57,6 +57,6 @@ reciprocity ("paying it forward") produces higher cooperation **coherence** and 
 
 ## Reproduce
 ```
-pip install -r requirements.txt   # numpy, pandas, matplotlib
-python3 run_p2_4.py               # ~10 s; writes results/
+conda env create -f environment.yml      # conda-forge; env "qs-sim"
+conda run -n qs-sim python run_p2_4.py   # ~10 s; writes results/
 ```

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import networkx as nx
 import numpy as np
 
 
@@ -48,29 +49,13 @@ class Params:
     t0_sd: float = 0.15          # initial trust-capital stock sd
 
 
-def watts_strogatz(n: int, k: int, p: float, rng: np.random.Generator) -> list[np.ndarray]:
-    """Watts-Strogatz small-world graph as an adjacency list (pure numpy, no networkx)."""
+def watts_strogatz(n: int, k: int, p: float, seed: int) -> list[np.ndarray]:
+    """Watts-Strogatz small-world graph as an adjacency list, via networkx (tested
+    generator rather than hand-rolled). `seed` makes generation deterministic."""
     if k % 2 != 0:
         k += 1
-    nbr: list[set[int]] = [set() for _ in range(n)]
-    half = k // 2
-    for i in range(n):
-        for j in range(1, half + 1):
-            nbr[i].add((i + j) % n)
-            nbr[i].add((i - j) % n)
-    # rewire
-    for i in range(n):
-        for j in range(1, half + 1):
-            if rng.random() < p:
-                old = (i + j) % n
-                choices = [x for x in range(n) if x != i and x not in nbr[i]]
-                if choices:
-                    new = int(rng.choice(choices))
-                    nbr[i].discard(old)
-                    nbr[old].discard(i)
-                    nbr[i].add(new)
-                    nbr[new].add(i)
-    return [np.array(sorted(s), dtype=np.int64) for s in nbr]
+    g = nx.watts_strogatz_graph(n, k, p, seed=seed)
+    return [np.array(sorted(g[i]), dtype=np.int64) for i in range(n)]
 
 
 def _coherence(activity: np.ndarray) -> float:
@@ -95,13 +80,13 @@ def run_once(params: Params, condition: str, seed: int) -> dict:
     if condition not in ("direct", "generalized"):
         raise ValueError(condition)
 
-    rng_struct = np.random.default_rng(seed)          # graph + initial trust (matched)
+    rng_struct = np.random.default_rng(seed)          # initial trust (matched)
     rng_donor = np.random.default_rng(seed + 10_000)  # donor schedule (matched)
     rng_dyn = np.random.default_rng(                  # within-round choices (diverges by design)
         seed + (20_000 if condition == "direct" else 30_000)
     )
 
-    adj = watts_strogatz(params.n, params.k, params.rewire, rng_struct)
+    adj = watts_strogatz(params.n, params.k, params.rewire, seed)  # matched (seed only)
     t = np.clip(rng_struct.normal(params.t0_mean, params.t0_sd, params.n), 0.0, 1.0)
     t0 = t.copy()
     activity = np.zeros(params.n, dtype=np.float64)

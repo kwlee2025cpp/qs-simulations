@@ -75,9 +75,14 @@ Figures: `results/p2_4_phase_coherence.png`, `results/p2_4_phase_volume.png`,
 ## Run it
 
 ```bash
-pip install -r requirements.txt        # numpy, pandas, matplotlib (no networkx needed)
-python3 run_p2_4.py                     # ~10 s; (re)writes results/
+conda env create -f environment.yml     # conda-forge only; creates env "qs-sim"
+conda run -n qs-sim python run_p2_4.py   # ~10 s; (re)writes results/
 ```
+
+Dependencies (numpy, pandas, matplotlib, **networkx**) are declared in
+`environment.yml` on **conda-forge** — no Anaconda `defaults` channel (so no
+Terms-of-Service gate for anyone who clones), and no pip `requirements.txt` (so GitHub
+Dependabot, which parses pip/npm but not conda env files, has nothing to alert on).
 
 Deterministic given the seeds in `run_p2_4.py` (seeds 0–15).
 

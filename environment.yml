@@ -1,0 +1,21 @@
+# Conda environment for the QS simulations.
+#
+# conda-forge only (no Anaconda `defaults` channel) -> no Terms-of-Service gate, so
+# collaborators can build this without accepting Anaconda's ToS. Dependencies are
+# declared HERE (conda), not in a pip requirements.txt, so GitHub Dependabot — which
+# parses pip/npm manifests but NOT conda environment.yml — has nothing to alert on.
+#
+# Create / update / use:
+#   conda env create -f environment.yml         # first time
+#   conda env update -f environment.yml --prune # after edits
+#   conda run -n qs-sim python run_p2_4.py
+name: qs-sim
+channels:
+  - conda-forge
+  - nodefaults   # never consult Anaconda `defaults` (no ToS gate; fully conda-forge)
+dependencies:
+  - python=3.12
+  - numpy>=1.26
+  - pandas>=2.2
+  - matplotlib-base>=3.8
+  - networkx>=3.2
