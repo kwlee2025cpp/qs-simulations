@@ -192,25 +192,50 @@ def _format(res: dict) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Live Tier-A QQ harness (mock or real).")
+    ap.add_argument("--provider", default="mock",
+                    choices=["mock", "gemini", "grok", "claude"],
+                    help="mock = built-in (no network); others issue REAL billable calls")
     ap.add_argument("--mock", choices=["M0", "M1", "M2"], default="M2",
-                    help="run the built-in mock participant realizing this process")
+                    help="which generating process the built-in mock realizes")
+    ap.add_argument("--model", default=None, help="override the provider's model id (pin it!)")
+    ap.add_argument("--temperature", type=float, default=1.0,
+                    help="sampling temperature (>0 so repeated sessions estimate probabilities)")
     ap.add_argument("--n", type=int, default=6400, help="respondents x item-pairs per order")
+    ap.add_argument("--live", action="store_true",
+                    help="required to actually contact a real provider (cost guard)")
     ap.add_argument("--decline-rate", type=float, default=0.0)
     args = ap.parse_args()
 
-    participant = MockParticipant(args.mock, decline_rate=args.decline_rate)
+    if args.provider == "mock":
+        participant = MockParticipant(args.mock, decline_rate=args.decline_rate)
+        tag = f"mock_{args.mock}"
+    else:
+        calls = args.n * 2 * 2  # both orders x two questions per session (approx)
+        if not args.live:
+            print(f"REFUSING to contact '{args.provider}' without --live.\n"
+                  f"A run at n={args.n} is ~{calls:,} billable API calls (both orders x 2 "
+                  f"questions). Confirm cost + the provider's research-use ToS, export the "
+                  f"API key, then re-run with --live (try a small --n pilot first).")
+            return
+        from providers import get_participant
+        participant = get_participant(args.provider, model=args.model, temperature=args.temperature)
+        tag = f"{args.provider}_{participant.model}".replace("/", "-")
+
     res = run_study(participant, EXAMPLE_BANK, args.n)
     out = _format(res)
     print(out)
-    expect = args.mock
-    note = ("OK: end-to-end pipeline recovered the mock's generating process."
-            if res["label"] == expect else
-            f"NOTE: classified {res['label']}, mock was {expect} "
-            f"(expected near the pre-registered N; tiny N or M1's subtle q can miss).")
+    if args.provider == "mock":
+        note = ("OK: end-to-end pipeline recovered the mock's generating process."
+                if res["label"] == args.mock else
+                f"NOTE: classified {res['label']}, mock was {args.mock} "
+                f"(expected near the pre-registered N; tiny N or M1's subtle q can miss).")
+    else:
+        note = (f"LIVE result for {participant.name}. Remember: this is the EXAMPLE bank — "
+                f"the pre-registered study needs novel/held-out item pairs (PREREG_P3_2M.md).")
     print(note)
 
     os.makedirs(RESULTS, exist_ok=True)
-    with open(os.path.join(RESULTS, f"p3_2m_live_mock_{args.mock}.txt"), "w") as fh:
+    with open(os.path.join(RESULTS, f"p3_2m_live_{tag}.txt"), "w") as fh:
         fh.write(out + "\n" + note + "\n")
 
 

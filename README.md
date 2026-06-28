@@ -100,8 +100,12 @@ Deterministic given the seeds in `run_p2_4.py` (seeds 0–15).
   **(done; mock-validated)**. Administers paired items in both orders with a
   consent-analog preamble + decline handling, and applies the shared QQ classifier.
   Runs end-to-end now via a built-in mock (`--mock M0|M1|M2`), which recovers each
-  generating process at the pre-registered N; real models plug in via a `Participant`
-  subclass (`LLMParticipantTemplate`). No API keys are stored/requested.
+  generating process at the pre-registered N. Real participants — **Gemini, Grok,
+  Claude** — are in `providers.py` (pure `requests`, formats adapted from the author's
+  `gemini-python-tutor`; keys from env, never hard-coded/logged; offline-validated via
+  `python providers.py --selftest`). Live calls are **cost-guarded**: a real
+  `--provider` does nothing without `--live` (a full run is tens of thousands of
+  billable calls — pilot first, confirm cost + each provider's research-use ToS).
 - `run_p2_5.py` — **P2.5 machine-node asymmetry (donor vs. intermediary × memory),
   with the Karpus-exploitation & Crandall-illegibility rivals (done — REFUTES the
   prediction as worded)**. At *matched help-volume*, a single concentrated machine

@@ -19,3 +19,4 @@ dependencies:
   - pandas>=2.2
   - matplotlib-base>=3.8
   - networkx>=3.2
+  - requests>=2.31   # live LLM provider HTTP calls (providers.py); pure-HTTP, no vendor SDKs
