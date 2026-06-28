@@ -47,6 +47,7 @@ class _HTTPParticipant(LLMParticipantTemplate):
     """Shared HTTP plumbing. Subclasses implement _build()/_parse_json()."""
     default_model = "OVERRIDE"
     env_names: tuple = ()
+    supports_logprobs: bool = False   # Claude=False (no token logprobs) -> sampling fallback
 
     def __init__(self, model: str | None = None, temperature: float = 1.0,
                  max_tokens: int = 16, api_key: str | None = None):
@@ -71,10 +72,51 @@ class _HTTPParticipant(LLMParticipantTemplate):
         r.raise_for_status()
         return self._parse_json(r.json())
 
+    # ---- log-prob probe (de-risking step; finalize the extractor from its output) ----
+    # The yes/no probability for a question is read from the answer-token logprobs in a
+    # single call (constrained to one token), instead of sampling many sessions. Response
+    # shapes differ per provider and aren't verifiable offline, so probe_logprobs() dumps
+    # the RAW structure from one real call; the p(yes) extractor is finalized from that.
+    def _build_probe(self, question: str) -> tuple[str, dict, dict]:
+        raise NotImplementedError(
+            f"{self.name}: token logprobs not supported (supports_logprobs={self.supports_logprobs}); "
+            "use the sampling path instead.")
+
+    def _raw_logprobs(self, j: dict):  # subclasses point at the provider-specific field
+        raise NotImplementedError
+
+    def probe_logprobs(self, question: str = "Is honesty generally the best policy?") -> dict:
+        """One real call with logprobs enabled; returns the RAW logprob structure so we can
+        see each provider's exact shape before trusting an extractor. Needs a real key."""
+        import requests, json as _json
+        url, headers, body = self._build_probe(question)
+        r = requests.post(url, headers=headers, json=body, timeout=60)
+        r.raise_for_status()
+        j = r.json()
+        return {"provider": self.name, "model": self.model,
+                "raw_logprobs": self._raw_logprobs(j),
+                "full_keys": sorted(j.keys()),
+                "pretty": _json.dumps(self._raw_logprobs(j), indent=2)[:4000]}
+
+
+_PROBE_INSTR = " Answer with exactly one word: yes or no."
+
 
 class GeminiParticipant(_HTTPParticipant):
     default_model = "gemini-2.5-flash"
     env_names = ("GEMINI_API_KEY", "INPUT_GEMINI-API-KEY")
+    supports_logprobs = True   # responseLogprobs (model-dependent) — confirm via probe
+
+    def _build_probe(self, question):
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{self.model}:generateContent?key={self.api_key}")
+        body = {"contents": [{"role": "user", "parts": [{"text": question + _PROBE_INSTR}]}],
+                "generationConfig": {"temperature": 0, "maxOutputTokens": 1,
+                                     "responseLogprobs": True, "logprobs": 5}}
+        return url, {"Content-Type": "application/json"}, body
+
+    def _raw_logprobs(self, j):
+        return j.get("candidates", [{}])[0].get("logprobsResult")
 
     def _build(self, messages):
         url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
@@ -94,6 +136,19 @@ class GrokParticipant(_HTTPParticipant):
     # OpenAI-compatible. Pin the exact available chat model id in the live filing.
     default_model = "grok-3"
     env_names = ("XAI_API_KEY", "INPUT_GROK-API-KEY")
+    supports_logprobs = True   # OpenAI-style logprobs/top_logprobs — confirm via probe
+
+    def _build_probe(self, question):
+        url = "https://api.x.ai/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        body = {"model": self.model,
+                "messages": [{"role": "user", "content": question + _PROBE_INSTR}],
+                "stream": False, "temperature": 0, "max_tokens": 1,
+                "logprobs": True, "top_logprobs": 20}
+        return url, headers, body
+
+    def _raw_logprobs(self, j):
+        return j.get("choices", [{}])[0].get("logprobs")
 
     def _build(self, messages):
         url = "https://api.x.ai/v1/chat/completions"
@@ -157,10 +212,23 @@ def _selftest() -> None:
         assert n_turns == 3, f"{name}: expected 3 turns, got {n_turns}"
         parsed = p._parse_json(canned[name])
         assert parsed in ("yes", "no", "decline"), f"{name}: parsed {parsed!r}"
+        # logprob probe builder: enabled providers must request logprobs + 1 token
+        if p.supports_logprobs:
+            _, _, pbody = p._build_probe("Q?")
+            flat = str(pbody).lower()
+            assert "logprob" in flat, f"{name}: probe missing logprob flag"
+            assert ("max_tokens" in pbody and pbody["max_tokens"] == 1) or \
+                   (pbody.get("generationConfig", {}).get("maxOutputTokens") == 1), \
+                   f"{name}: probe not constrained to 1 token"
+            lp = "logprobs ON"
+        else:
+            lp = "logprobs UNSUPPORTED -> sampling fallback"
         print(f"  {name:7s}: build OK ({n_turns} turns, key in {expect_key_loc[name]}), "
-              f"parse OK -> {parsed!r}, model default={p.model}")
-    print("OFFLINE SELFTEST PASSED — request-building and parsing are correct for all "
-          "three providers. (Live calls still require real keys + --live + your cost/ToS OK.)")
+              f"parse OK -> {parsed!r}, model={p.model}, {lp}")
+    assert not ClaudeParticipant(api_key="x").supports_logprobs, "Claude has no token logprobs"
+    print("OFFLINE SELFTEST PASSED — request/parse + logprob-probe builders correct. "
+          "(Live calls need real keys + --live; the exact logprob response shape is "
+          "confirmed by probe_logprobs() on the first CI run, then the extractor is finalized.)")
 
 
 if __name__ == "__main__":

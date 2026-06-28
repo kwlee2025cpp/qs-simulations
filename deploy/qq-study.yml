@@ -1,0 +1,72 @@
+# QQ study (society of LLMs) — GitHub Actions workflow for the DEDICATED PRIVATE
+# research repo. DO NOT place this in a public repo: it consumes API-key secrets.
+#
+# Layout assumed: this repo (private) has `qs-simulations` added as a git submodule at
+# ./qs-simulations. Copy this file to  .github/workflows/qq-study.yml  in the PRIVATE
+# repo, add the three secrets (GEMINI_API_KEY, XAI_API_KEY, ANTHROPIC_API_KEY), then
+# run it from the Actions tab (manual trigger only).
+#
+# Order of use:  mode=probe (cheap, learn logprob shapes)  ->  mode=pilot (small n,
+# all 3 providers, sampling path)  ->  mode=full once the extractor is finalized.
+
+name: QQ study (society of LLMs)
+
+on:
+  workflow_dispatch:            # manual only — never on push/PR (no fork-secret exposure)
+    inputs:
+      mode:
+        description: "probe | pilot"
+        default: "probe"
+        type: choice
+        options: ["probe", "pilot"]
+      n:
+        description: "respondents x item-pairs per order (pilot)"
+        default: "100"
+      providers:
+        description: "comma list for pilot (sampling path works for all three)"
+        default: "gemini,grok,claude"
+
+permissions:
+  contents: read
+
+concurrency:                    # never run two billable studies at once
+  group: qq-study
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:                        # secrets -> the clean env names providers.py prefers
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet requests numpy
+      - name: Probe log-prob shapes
+        if: ${{ inputs.mode == 'probe' }}
+        working-directory: qs-simulations
+        run: python run_probe.py --providers gemini,grok
+      - name: Pilot (sampling path; all selected providers)
+        if: ${{ inputs.mode == 'pilot' }}
+        working-directory: qs-simulations
+        run: |
+          IFS=',' read -ra PROVS <<< "${{ inputs.providers }}"
+          for prov in "${PROVS[@]}"; do
+            echo "::group::$prov"
+            python llm_qq_runner.py --provider "$prov" --n "${{ inputs.n }}" --live || true
+            echo "::endgroup::"
+          done
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: qq-${{ inputs.mode }}-results
+          path: qs-simulations/results/
+          if-no-files-found: warn
