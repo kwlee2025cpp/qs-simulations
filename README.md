@@ -96,9 +96,19 @@ Deterministic given the seeds in `run_p2_4.py` (seeds 0–15).
   / M1 (classical order) / M2 (quantum) and fixes the sample size **(done** — PASS,
   pre-registered N ≈ 6,400 resp.×item-pairs/order; binding failure mode is
   "false-quantum" at small N; see `PREREG_P3_2M.md`, `results/p3_2m_summary.txt`**)**.
-  The **live** LLM Tier-A study (spec + "respect each LLM" ethics in `PREREG_P3_2M.md`)
-  is not yet run — it needs model access.
-- P2.5 — LLM node at donor vs. intermediary × memory configuration *(planned)*
+- `llm_qq_runner.py` — **live Tier-A harness** for the society-of-LLMs QQ study
+  **(done; mock-validated)**. Administers paired items in both orders with a
+  consent-analog preamble + decline handling, and applies the shared QQ classifier.
+  Runs end-to-end now via a built-in mock (`--mock M0|M1|M2`), which recovers each
+  generating process at the pre-registered N; real models plug in via a `Participant`
+  subclass (`LLMParticipantTemplate`). No API keys are stored/requested.
+- `run_p2_5.py` — **P2.5 machine-node asymmetry (donor vs. intermediary × memory),
+  with the Karpus-exploitation & Crandall-illegibility rivals (done — REFUTES the
+  prediction as worded)**. At *matched help-volume*, a single concentrated machine
+  donor spreads cooperation *less* broadly/evenly than the same volume scattered across
+  random human donors (donor Δcoherence and Δreach both < 0); stateless-intermediary
+  attenuation is negligible at one node. Like the P2.4 volume result, this feeds a
+  wording correction back into the framework. See `results/p2_5_summary.txt`.
 - P3.2 (human) — order-vs-count adjudication: M0/M1/M2 model-recovery + fitting *(planned)*
 
 ## License & citation

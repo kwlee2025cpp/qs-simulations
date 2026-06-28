@@ -1,0 +1,30 @@
+P2.5 — asymmetric machine node (donor amplifies / intermediary attenuates)
+Machine's marginal effect on coherence (arm minus matched baseline):
+                       memory OFF                memory ON
+  donor        : d_coh -0.0986 (2SE 0.0081)   |  -0.1093 (2SE 0.0110)
+  intermediary : d_coh +0.0006 (2SE 0.0016)   |  +0.0000 (2SE 0.0000)
+
+(H1 asymmetry, memory OFF, rivals off): donor>0 False, intermediary<0 False -> NOT supported
+(H2 memory): memory ON raises intermediary d_coh (+0.0006 -> +0.0000) -> NOT supported
+
+(C contest) donor amplification d_coh(donor) vs Karpus exploitation p_exploit (memory OFF):
+  p_exploit= 0.0: d_coh -0.0986 (2SE 0.0081)  NOT > 0 (eroded)
+  p_exploit= 0.1: d_coh -0.1080 (2SE 0.0080)  NOT > 0 (eroded)
+  p_exploit= 0.2: d_coh -0.1077 (2SE 0.0069)  NOT > 0 (eroded)
+  p_exploit=0.35: d_coh -0.1028 (2SE 0.0053)  NOT > 0 (eroded)
+  p_exploit= 0.5: d_coh -0.1026 (2SE 0.0043)  NOT > 0 (eroded)
+  p_exploit= 0.7: d_coh -0.1019 (2SE 0.0059)  NOT > 0 (eroded)
+
+Donor amplification is eroded to <= 0 at p_exploit >= 0.0 (humans exploiting the benevolent machine overturn it).
+
+FINDING (a genuine refutation, like the P2.4 volume result): P2.5's 'donor amplifies' is
+NOT supported at MATCHED help-volume. A single concentrated machine donor — even at the
+highest-degree node — spreads cooperation LESS broadly and LESS evenly than the same
+volume of help scattered across random human donors (donor d_coh<0 AND d_reach<0); the
+exploitation rival only deepens this. The stateless-INTERMEDIARY attenuation is
+NEGLIGIBLE at one node (chains rarely terminate exactly there). 
+Implication for the framework: the 'paying-it-forward' breadth advantage (P2.4) comes
+from MANY DISTRIBUTED origins, not one tireless donor; a machine's distinctive value (if
+any) must lie elsewhere (reliability/volume, or bridging structural holes), not in breadth.
+P2.5 should be REVISED accordingly. Sufficiency-style reasoning only (equifinality);
+the decisive test remains the human PreReg 2 (P2.5).

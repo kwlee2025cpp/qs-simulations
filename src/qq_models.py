@@ -133,33 +133,48 @@ def _sample(cells: dict, n: int, rng) -> dict:
     return {"yy": counts[0], "yn": counts[1], "ny": counts[2], "nn": counts[3]}
 
 
+_Z95 = 1.959963985
+
+
+def classify_counts(cAB: dict, cBA: dict, alpha_z: float = _Z95) -> dict:
+    """
+    The pre-registered 2x2 classifier, computed from OBSERVED counts in each asking
+    order (the same code path the live LLM study uses). cAB/cBA are dicts with integer
+    keys "yy","yn","ny","nn" (A-answer, B-answer) for orders AB and BA respectively.
+
+    Returns dict with: label ("M0"/"M1"/"M2"), q_hat (QQ residual estimate),
+    z_qq, z_order, order_effect (bool), qq_violated (bool).
+    """
+    nAB = max(1, sum(cAB.values()))
+    nBA = max(1, sum(cBA.values()))
+
+    # order-effect test: B-yes marginal differs across orders?
+    pB_AB = (cAB["yy"] + cAB["ny"]) / nAB
+    pB_BA = (cBA["yy"] + cBA["ny"]) / nBA
+    se_oe = np.sqrt(pB_AB * (1 - pB_AB) / nAB + pB_BA * (1 - pB_BA) / nBA) + 1e-12
+    z_oe = (pB_AB - pB_BA) / se_oe
+    order_effect = abs(z_oe) > alpha_z
+
+    # QQ-equality test: disagree-sum difference != 0?
+    d_AB = (cAB["yn"] + cAB["ny"]) / nAB
+    d_BA = (cBA["yn"] + cBA["ny"]) / nBA
+    se_qq = np.sqrt(d_AB * (1 - d_AB) / nAB + d_BA * (1 - d_BA) / nBA) + 1e-12
+    z_qq = (d_AB - d_BA) / se_qq
+    qq_violated = abs(z_qq) > alpha_z
+
+    label = "M0" if not order_effect else ("M1" if qq_violated else "M2")
+    return {"label": label, "q_hat": d_AB - d_BA, "z_qq": z_qq, "z_order": z_oe,
+            "order_effect": order_effect, "qq_violated": qq_violated}
+
+
 def classify_study(model: str, p: QQParams, n_per_order: int, rng,
                    alpha: float = 0.05) -> str:
     """
     One simulated study: sample n_per_order respondents in EACH asking order from the
     given generating model, then classify by the pre-registered 2x2 logic.
-
     Returns one of "M0", "M1", "M2" (the inferred process).
     """
     f = MODELS[model]
     cAB = _sample(f(p, "AB"), n_per_order, rng)
     cBA = _sample(f(p, "BA"), n_per_order, rng)
-    n = n_per_order
-
-    # ---- order-effect test: does the B-yes marginal differ across orders? ----
-    pB_AB = (cAB["yy"] + cAB["ny"]) / n
-    pB_BA = (cBA["yy"] + cBA["ny"]) / n
-    se_oe = np.sqrt(pB_AB * (1 - pB_AB) / n + pB_BA * (1 - pB_BA) / n) + 1e-12
-    z_oe = (pB_AB - pB_BA) / se_oe
-    order_effect = abs(z_oe) > 1.959963985
-
-    # ---- QQ-equality test: is the disagree-sum difference != 0? ----
-    d_AB = (cAB["yn"] + cAB["ny"]) / n
-    d_BA = (cBA["yn"] + cBA["ny"]) / n
-    se_qq = np.sqrt(d_AB * (1 - d_AB) / n + d_BA * (1 - d_BA) / n) + 1e-12
-    z_qq = (d_AB - d_BA) / se_qq
-    qq_violated = abs(z_qq) > 1.959963985
-
-    if not order_effect:
-        return "M0"
-    return "M1" if qq_violated else "M2"
+    return classify_counts(cAB, cBA)["label"]

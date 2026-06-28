@@ -1,0 +1,10 @@
+Participant : mock:M1
+N (target/used per study) : 6400 target, 12798 used; declines=0
+Counts AB (A,B) : {'yy': 2050, 'yn': 1804, 'ny': 764, 'nn': 1781}
+Counts BA (A,B) : {'yy': 1780, 'yn': 2237, 'ny': 469, 'nn': 1913}
+QQ residual q_hat : -0.0216   (z_qq=-2.48)
+Order effect      : True (z_order=+10.26)
+QQ violated       : True
+==> classification: M1  (classical order effect (QQ equality VIOLATED))
+
+OK: end-to-end pipeline recovered the mock's generating process.

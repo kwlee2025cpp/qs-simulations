@@ -1,0 +1,10 @@
+Participant : mock:M0
+N (target/used per study) : 6400 target, 12798 used; declines=0
+Counts AB (A,B) : {'yy': 1370, 'yn': 2484, 'ny': 901, 'nn': 1644}
+Counts BA (A,B) : {'yy': 1365, 'yn': 2438, 'ny': 896, 'nn': 1700}
+QQ residual q_hat : +0.0080   (z_qq=+0.90)
+Order effect      : False (z_order=+0.18)
+QQ violated       : False
+==> classification: M0  (no order effect)
+
+OK: end-to-end pipeline recovered the mock's generating process.
