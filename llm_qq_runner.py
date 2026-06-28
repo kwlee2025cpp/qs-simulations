@@ -201,10 +201,17 @@ def main() -> None:
     ap.add_argument("--temperature", type=float, default=1.0,
                     help="sampling temperature (>0 so repeated sessions estimate probabilities)")
     ap.add_argument("--n", type=int, default=6400, help="respondents x item-pairs per order")
+    ap.add_argument("--bank", default="example", choices=["example", "heldout"],
+                    help="example = tiny demo bank; heldout = the novel pilot/study items")
     ap.add_argument("--live", action="store_true",
                     help="required to actually contact a real provider (cost guard)")
     ap.add_argument("--decline-rate", type=float, default=0.0)
     args = ap.parse_args()
+
+    if args.bank == "heldout":
+        from item_bank import HELDOUT_BANK as BANK   # lazy import avoids circularity
+    else:
+        BANK = EXAMPLE_BANK
 
     if args.provider == "mock":
         participant = MockParticipant(args.mock, decline_rate=args.decline_rate)
@@ -221,7 +228,7 @@ def main() -> None:
         participant = get_participant(args.provider, model=args.model, temperature=args.temperature)
         tag = f"{args.provider}_{participant.model}".replace("/", "-")
 
-    res = run_study(participant, EXAMPLE_BANK, args.n)
+    res = run_study(participant, BANK, args.n)
     out = _format(res)
     print(out)
     if args.provider == "mock":
