@@ -127,11 +127,21 @@ class GeminiParticipant(_HTTPParticipant):
                      "parts": [{"text": m["content"]}]} for m in messages]
         body = {"contents": contents,
                 "generationConfig": {"temperature": self.temperature,
-                                     "maxOutputTokens": self.max_tokens}}
+                                     "maxOutputTokens": self.max_tokens,
+                                     # gemini-2.5-flash is a THINKING model: without this it
+                                     # spends maxOutputTokens on hidden thinking and returns no
+                                     # answer (finishReason MAX_TOKENS, no parts). Disable it.
+                                     "thinkingConfig": {"thinkingBudget": 0}}}
         return url, {"Content-Type": "application/json"}, body
 
     def _parse_json(self, j):
-        return "\n".join(p["text"] for p in j["candidates"][0]["content"]["parts"])
+        # defensive: a truncated/blocked/empty candidate -> "" (caller treats as decline),
+        # never a crash that kills the whole run.
+        cand = (j.get("candidates") or [{}])[0]
+        parts = (cand.get("content") or {}).get("parts")
+        if not parts:
+            return ""
+        return "\n".join(p.get("text", "") for p in parts)
 
 
 class GrokParticipant(_HTTPParticipant):
