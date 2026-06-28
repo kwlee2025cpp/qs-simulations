@@ -30,7 +30,7 @@ def _redact(s: str) -> str:
 
 
 def _post(url: str, headers: dict, body: dict):
-    r = requests.post(url, headers=headers, json=body, timeout=60)
+    r = requests.post(url, headers=headers, json=body, timeout=180)  # reasoning models are slow
     return r.status_code, r.text
 
 
