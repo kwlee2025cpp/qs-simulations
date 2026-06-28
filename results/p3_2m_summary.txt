@@ -1,0 +1,20 @@
+TRUE generative properties (analytic):
+  params: a=0.6, b=0.35, c_pos=0.18, c_neg=0.05, phi=0.9, theta=0.7
+  model |   true q (QQ residual) | order-effect | QQ holds?
+   M0  | +0.0000              | 0.0000       | yes
+   M1  | -0.0325              | 0.0880       | NO
+   M2  | -0.0000              | 0.4798       | yes
+
+RECOVERY (fraction of studies where the generating model is recovered):
+  N(per order) |     50 |    100 |    200 |    400 |    800 |   1600 |   3200 |   6400 |  12800
+   gen=M0     |   0.94 |   0.94 |   0.95 |   0.96 |   0.95 |   0.95 |   0.95 |   0.95 |   0.94
+   gen=M1     |   0.02 |   0.03 |   0.07 |   0.14 |   0.27 |   0.47 |   0.75 |   0.96 |   1.00
+   gen=M2     |   0.95 |   0.95 |   0.96 |   0.95 |   0.94 |   0.95 |   0.95 |   0.95 |   0.95
+
+Target recovery: 80% for all three models.
+PASS — QQ-equality test discriminates M0/M1/M2; pre-registered N = 6400 (respondents x item-pairs per order).
+
+Interpretation: this fixes the sample size for the LIVE Tier-A study and
+confirms the parameter-free QQ test can tell a quantum-like order effect
+(M2) from a classical one (M1) and from no order effect (M0). It does NOT
+claim real LLMs realize any of these — that is the live study (PreReg 4).

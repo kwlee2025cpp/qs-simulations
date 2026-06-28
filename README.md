@@ -91,8 +91,15 @@ Deterministic given the seeds in `run_p2_4.py` (seeds 0–15).
 ## Roadmap
 
 - `run_p2_4.py` — generalized vs. direct reciprocity **(done)**
+- `run_p3_2m_recovery.py` — **P3.2-M (society of LLMs), Tier-A model-recovery**
+  precursor: shows the parameter-free **QQ-equality** test discriminates M0 (no order)
+  / M1 (classical order) / M2 (quantum) and fixes the sample size **(done** — PASS,
+  pre-registered N ≈ 6,400 resp.×item-pairs/order; binding failure mode is
+  "false-quantum" at small N; see `PREREG_P3_2M.md`, `results/p3_2m_summary.txt`**)**.
+  The **live** LLM Tier-A study (spec + "respect each LLM" ethics in `PREREG_P3_2M.md`)
+  is not yet run — it needs model access.
 - P2.5 — LLM node at donor vs. intermediary × memory configuration *(planned)*
-- P3.2 — order-vs-count adjudication: M0/M1/M2 model-recovery + fitting *(planned)*
+- P3.2 (human) — order-vs-count adjudication: M0/M1/M2 model-recovery + fitting *(planned)*
 
 ## License & citation
 
