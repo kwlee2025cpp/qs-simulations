@@ -144,7 +144,7 @@ class GrokParticipant(_HTTPParticipant):
         body = {"model": self.model,
                 "messages": [{"role": "user", "content": question + _PROBE_INSTR}],
                 "stream": False, "temperature": 0, "max_tokens": 1,
-                "logprobs": True, "top_logprobs": 20}
+                "logprobs": True, "top_logprobs": 8}   # xAI caps top_logprobs at 8
         return url, headers, body
 
     def _raw_logprobs(self, j):
