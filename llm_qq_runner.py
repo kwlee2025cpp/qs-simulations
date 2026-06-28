@@ -237,8 +237,12 @@ def main() -> None:
                 f"NOTE: classified {res['label']}, mock was {args.mock} "
                 f"(expected near the pre-registered N; tiny N or M1's subtle q can miss).")
     else:
-        note = (f"LIVE result for {participant.name}. Remember: this is the EXAMPLE bank — "
-                f"the pre-registered study needs novel/held-out item pairs (PREREG_P3_2M.md).")
+        bank_note = ("held-out bank" if args.bank == "heldout"
+                     else "EXAMPLE bank (use --bank heldout for the study)")
+        note = (f"LIVE result for {participant.name} on the {bank_note}. This n is a "
+                f"pilot-scale sanity check, NOT evidence: the classical-vs-quantum "
+                f"(M1-vs-M2) verdict needs the pre-registered N (~6,400/order) — at small "
+                f"n a classical order effect can masquerade as quantum (PREREG_P3_2M.md).")
     print(note)
 
     os.makedirs(RESULTS, exist_ok=True)

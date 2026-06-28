@@ -65,10 +65,12 @@ class _HTTPParticipant(LLMParticipantTemplate):
     def _parse_json(self, j: dict) -> str:
         raise NotImplementedError
 
+    request_timeout: int = 180   # reasoning models (e.g. Grok) can exceed 60s per call
+
     def _chat(self, messages: list[dict]) -> str:
         import requests
         url, headers, body = self._build(messages)
-        r = requests.post(url, headers=headers, json=body, timeout=60)
+        r = requests.post(url, headers=headers, json=body, timeout=self.request_timeout)
         r.raise_for_status()
         return self._parse_json(r.json())
 
