@@ -34,7 +34,9 @@ make this one a *severe* test (not a confirmation mirror) are listed below and i
 
 **Prediction (QS §5, P2.4):** at *matched trust-capital density*, generalized /
 upstream reciprocity ("paying it forward", A→B→C) yields higher cooperation
-**coherence** and **larger-scale** cooperation than direct (two-body, A↔B) reciprocity.
+**coherence** and (as originally worded) **larger-scale** cooperation than direct
+(two-body, A↔B) reciprocity. *This simulation refines that wording — see the result
+below: the breadth reading holds, the raw-volume reading does not.*
 
 **Model** (`src/trust_sim.py`), in System-Dynamics grammar (QS §3):
 - Each agent holds a **trust-capital stock** `T` with an **inflow** (receiving help
