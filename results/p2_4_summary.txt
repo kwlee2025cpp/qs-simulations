@@ -1,0 +1,25 @@
+P2.4 SIMULATION VERDICT (pre-registered rule; see PREREG.md)
+================================================================
+Baseline cell: alpha_boost=0.06, beta_suppress=0  (rival OFF)
+
+(S) SUFFICIENCY on the primary DV (coherence):
+      coherence advantage = +0.0877  (2*SE = 0.0096)
+      VERDICT: PASS - mechanism IS sufficient in simulation to make
+      generalized reciprocity more COHERENT than direct at matched trust density.
+
+(C) CONTEST (Tsvetkova-Macy suppression rival) on coherence:
+      coherence advantage ERODES but does NOT reverse across the tested beta range
+      (the rival strongly erodes the advantage -> P2.4 is a genuine contest, not a
+       foregone metaphor, even where the advantage's sign is structurally robust).
+
+(X) HONEST COMPLICATION - the SCALE sub-claim of P2.4 is NOT supported:
+      total-VOLUME advantage at baseline = -233.7 help-acts
+      across the grid, volume favors DIRECT in 100% of cells.
+      Interpretation: generalized reciprocity wins on BREADTH (coherence, reach);
+      DIRECT reciprocity wins on raw VOLUME (self-reinforcing dyads pump more help).
+      => P2.4's 'larger-scale' wording should be split: breadth (supported) vs.
+         volume (refuted here). This should feed back into the QS framework §5.
+
+CAVEAT: a simulation shows SUFFICIENCY, never TRUTH (equifinality - other
+mechanisms could produce the same pattern). The decisive test is the
+pre-registered HUMAN experiment in QS/pre-registrations.md (PreReg 1).
