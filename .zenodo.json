@@ -1,0 +1,22 @@
+{
+  "title": "QS Simulations: computational companions to the Quantum Social Physics framework",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "description": "Neutral, shareable simulation companions to the Quantum Social Physics (QS) framework: a severe-test agent-based model of generalized vs. direct reciprocity (P2.4), an asymmetric machine-node propagation model (P2.5), and a parameter-free QQ-equality model-recovery study plus a live question-order harness for the 'society of LLMs' order-vs-count experiment (P3.2-M). Built to refute the framework's predictions, not confirm them.",
+  "creators": [
+    {
+      "name": "Lee, Kangwon",
+      "affiliation": "Tech University of Korea (TU Korea)"
+    }
+  ],
+  "keywords": [
+    "agent-based modeling",
+    "social contagion",
+    "generalized reciprocity",
+    "quantum cognition",
+    "QQ equality",
+    "trust capital",
+    "AI safety"
+  ]
+}

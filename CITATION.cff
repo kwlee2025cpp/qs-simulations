@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "QS Simulations: computational companions to the Quantum Social Physics framework"
+message: "If you use this software, please cite both this repository and the QS framework paper."
+type: software
+authors:
+  - family-names: Lee
+    given-names: Kangwon
+    email: kangwon.lee@ieee.org
+    affiliation: "Tech University of Korea (TU Korea)"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO: confirm ORCID before the Zenodo DOI is minted
+license: MIT
+repository-code: "https://github.com/kwlee2025cpp/qs-simulations"
+keywords:
+  - agent-based modeling
+  - social contagion
+  - generalized reciprocity
+  - quantum cognition
+  - QQ equality
+  - trust capital
+  - AI safety
+abstract: >-
+  Neutral, shareable simulation companions to the Quantum Social Physics (QS) framework.
+  Includes a severe-test agent-based model of generalized vs. direct reciprocity (P2.4),
+  an asymmetric machine-node propagation model (P2.5), and a parameter-free QQ-equality
+  model-recovery study plus a live question-order harness for the "society of LLMs"
+  order-vs-count experiment (P3.2-M). Designed as severe tests that can refute the
+  framework's predictions, not confirm them.
