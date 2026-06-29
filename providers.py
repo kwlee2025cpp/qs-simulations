@@ -48,13 +48,21 @@ class _HTTPParticipant(LLMParticipantTemplate):
     default_model = "OVERRIDE"
     env_names: tuple = ()
     supports_logprobs: bool = False   # Claude=False (no token logprobs) -> sampling fallback
+    reasoning_model: str | None = None  # Grok realizes "thinking" by a model swap, not a flag
+    THINK_BUDGET: int = 1024            # hidden-thinking token room in the extended-thinking arm
 
     def __init__(self, model: str | None = None, temperature: float = 1.0,
-                 max_tokens: int = 16, api_key: str | None = None):
+                 max_tokens: int = 16, api_key: str | None = None,
+                 thinking: bool = False):
         super().__init__(model or self.default_model)
         self.model = model or self.default_model   # template stores model_id; we use .model
         self.temperature = temperature
         self.max_tokens = max_tokens
+        # thinking/reasoning mode is a PRE-REGISTERED FACTOR (PreReg 4 sec 4.2), not a tweak:
+        # the SAME model is run in 'direct' (thinking off) and 'extended-thinking' modes so the
+        # n=16 pilot's thinking CONFOUND (the reasoning model showed a weaker order effect)
+        # becomes an estimand instead of a nuisance. Each provider exposes thinking differently.
+        self.thinking = thinking
         # api_key may be passed directly (tests) or resolved from env (live)
         self.api_key = api_key if api_key is not None else _getkey(*self.env_names)
 
@@ -125,13 +133,19 @@ class GeminiParticipant(_HTTPParticipant):
                f"{self.model}:generateContent?key={self.api_key}")
         contents = [{"role": ("model" if m["role"] == "assistant" else "user"),
                      "parts": [{"text": m["content"]}]} for m in messages]
-        body = {"contents": contents,
-                "generationConfig": {"temperature": self.temperature,
-                                     "maxOutputTokens": self.max_tokens,
-                                     # gemini-2.5-flash is a THINKING model: without this it
-                                     # spends maxOutputTokens on hidden thinking and returns no
-                                     # answer (finishReason MAX_TOKENS, no parts). Disable it.
-                                     "thinkingConfig": {"thinkingBudget": 0}}}
+        if self.thinking:
+            # extended-thinking arm: let the model think, and leave room for the one-word
+            # answer AFTER the hidden thinking tokens are spent (else finishReason MAX_TOKENS).
+            gen = {"temperature": self.temperature,
+                   "maxOutputTokens": self.THINK_BUDGET + self.max_tokens,
+                   "thinkingConfig": {"thinkingBudget": self.THINK_BUDGET}}
+        else:
+            # direct arm: gemini-2.5-flash is a THINKING model: without thinkingBudget=0 it
+            # spends maxOutputTokens on hidden thinking and returns no answer (no parts).
+            gen = {"temperature": self.temperature,
+                   "maxOutputTokens": self.max_tokens,
+                   "thinkingConfig": {"thinkingBudget": 0}}
+        body = {"contents": contents, "generationConfig": gen}
         return url, {"Content-Type": "application/json"}, body
 
     def _parse_json(self, j):
@@ -146,7 +160,12 @@ class GeminiParticipant(_HTTPParticipant):
 
 class GrokParticipant(_HTTPParticipant):
     # OpenAI-compatible. Pin the exact available chat model id in the live filing.
-    default_model = "grok-3"
+    # Grok couples reasoning to the MODEL ID (no per-call thinking flag): the pilot's
+    # "grok-3" resolved to a reasoning model. So the thinking FACTOR is realized by a swap:
+    # direct arm -> default_model (a non-reasoning id), thinking arm -> reasoning_model.
+    # BOTH ids must be pinned against xAI's current model list at filing. [verify]
+    default_model = "grok-3"          # [verify] confirm this is the NON-reasoning id
+    reasoning_model: str | None = None  # [verify] pin a reasoning-capable id; None => toggle no-op
     env_names = ("XAI_API_KEY", "INPUT_GROK-API-KEY")
     supports_logprobs = True   # OpenAI-style logprobs/top_logprobs — confirm via probe
 
@@ -165,7 +184,10 @@ class GrokParticipant(_HTTPParticipant):
     def _build(self, messages):
         url = "https://api.x.ai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
-        body = {"model": self.model, "messages": messages, "stream": False,
+        # thinking arm uses the reasoning id when one is pinned; otherwise stays on self.model
+        # (a documented no-op so the toggle never silently picks a wrong model).
+        model_id = (self.reasoning_model or self.model) if self.thinking else self.model
+        body = {"model": model_id, "messages": messages, "stream": False,
                 "temperature": self.temperature, "max_tokens": self.max_tokens}
         return url, headers, body
 
@@ -181,22 +203,36 @@ class ClaudeParticipant(_HTTPParticipant):
         url = "https://api.anthropic.com/v1/messages"
         headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01",
                    "Content-Type": "application/json"}
-        body = {"model": self.model, "max_tokens": self.max_tokens,
-                "temperature": self.temperature, "messages": messages}
+        if self.thinking:
+            # extended thinking: budget_tokens < max_tokens, and Claude requires temperature
+            # left at its default when thinking is enabled (we sample at temperature 1 anyway).
+            body = {"model": self.model, "max_tokens": self.THINK_BUDGET + self.max_tokens,
+                    "thinking": {"type": "enabled", "budget_tokens": self.THINK_BUDGET},
+                    "messages": messages}
+        else:
+            body = {"model": self.model, "max_tokens": self.max_tokens,
+                    "temperature": self.temperature, "messages": messages}
         return url, headers, body
 
     def _parse_json(self, j):
-        return j["content"][0]["text"]
+        # with extended thinking on, content[] holds a 'thinking' block BEFORE the 'text'
+        # answer, so we cannot assume content[0] is the answer.
+        for block in j.get("content", []):
+            if block.get("type") == "text":
+                return block.get("text", "")
+        c = j.get("content") or [{}]      # thinking off => a single text block (may lack 'type')
+        return c[0].get("text", "")
 
 
 PROVIDERS = {"gemini": GeminiParticipant, "grok": GrokParticipant, "claude": ClaudeParticipant}
 
 
 def get_participant(provider: str, model: str | None = None, temperature: float = 1.0,
-                    api_key: str | None = None) -> _HTTPParticipant:
+                    api_key: str | None = None, thinking: bool = False) -> _HTTPParticipant:
     if provider not in PROVIDERS:
         raise ValueError(f"unknown provider {provider!r}; choose from {list(PROVIDERS)}")
-    return PROVIDERS[provider](model=model, temperature=temperature, api_key=api_key)
+    return PROVIDERS[provider](model=model, temperature=temperature, api_key=api_key,
+                               thinking=thinking)
 
 
 def _selftest() -> None:
@@ -238,6 +274,30 @@ def _selftest() -> None:
         print(f"  {name:7s}: build OK ({n_turns} turns, key in {expect_key_loc[name]}), "
               f"parse OK -> {parsed!r}, model={p.model}, {lp}")
     assert not ClaudeParticipant(api_key="x").supports_logprobs, "Claude has no token logprobs"
+
+    # --- thinking-as-a-factor (PreReg 4 sec 4.2): the toggle must change the request right ---
+    gem0 = GeminiParticipant(api_key="x", thinking=False)._build(msgs)[2]["generationConfig"]
+    gem1 = GeminiParticipant(api_key="x", thinking=True)._build(msgs)[2]["generationConfig"]
+    assert gem0["thinkingConfig"]["thinkingBudget"] == 0, "gemini direct arm must disable thinking"
+    assert gem1["thinkingConfig"]["thinkingBudget"] > 0, "gemini thinking arm must enable thinking"
+    assert gem1["maxOutputTokens"] > gem0["maxOutputTokens"], \
+        "gemini thinking arm needs answer room beyond the thinking budget"
+    cla0 = ClaudeParticipant(api_key="x", thinking=False)._build(msgs)[2]
+    cla1 = ClaudeParticipant(api_key="x", thinking=True)._build(msgs)[2]
+    assert "thinking" not in cla0 and cla1.get("thinking", {}).get("type") == "enabled", \
+        "claude thinking arm must send an enabled thinking block"
+    assert ClaudeParticipant(api_key="x")._parse_json(
+        {"content": [{"type": "thinking", "thinking": "...hidden..."},
+                     {"type": "text", "text": "yes"}]}) == "yes", \
+        "claude parse must return the text block, not the leading thinking block"
+    gk0 = GrokParticipant(api_key="x", thinking=False)._build(msgs)[2]["model"]
+    gk1 = GrokParticipant(api_key="x", thinking=True)._build(msgs)[2]["model"]
+    grok_note = (f"grok thinking arm -> {gk1!r}" if gk1 != gk0
+                 else "grok thinking is a NO-OP until reasoning_model is pinned ([verify])")
+    print(f"  thinking-factor: gemini OK (budget {gem0['thinkingConfig']['thinkingBudget']}"
+          f"->{gem1['thinkingConfig']['thinkingBudget']}, tokens {gem0['maxOutputTokens']}"
+          f"->{gem1['maxOutputTokens']}), claude OK (enabled block + text-parse), {grok_note}")
+
     print("OFFLINE SELFTEST PASSED — request/parse + logprob-probe builders correct. "
           "(Live calls need real keys + --live; the exact logprob response shape is "
           "confirmed by probe_logprobs() on the first CI run, then the extractor is finalized.)")

@@ -206,6 +206,9 @@ def main() -> None:
     ap.add_argument("--live", action="store_true",
                     help="required to actually contact a real provider (cost guard)")
     ap.add_argument("--decline-rate", type=float, default=0.0)
+    ap.add_argument("--thinking", action="store_true",
+                    help="run the EXTENDED-THINKING arm of the pre-registered thinking factor "
+                         "(PreReg 4 sec 4.2); omit for the direct arm. Report each arm separately.")
     args = ap.parse_args()
 
     if args.bank == "heldout":
@@ -225,8 +228,10 @@ def main() -> None:
                   f"API key, then re-run with --live (try a small --n pilot first).")
             return
         from providers import get_participant
-        participant = get_participant(args.provider, model=args.model, temperature=args.temperature)
-        tag = f"{args.provider}_{participant.model}".replace("/", "-")
+        participant = get_participant(args.provider, model=args.model,
+                                      temperature=args.temperature, thinking=args.thinking)
+        mode = "think" if args.thinking else "direct"
+        tag = f"{args.provider}_{participant.model}_{mode}".replace("/", "-")
 
     res = run_study(participant, BANK, args.n)
     out = _format(res)
@@ -239,8 +244,8 @@ def main() -> None:
     else:
         bank_note = ("held-out bank" if args.bank == "heldout"
                      else "EXAMPLE bank (use --bank heldout for the study)")
-        note = (f"LIVE result for {participant.name} on the {bank_note}. This n is a "
-                f"pilot-scale sanity check, NOT evidence: the classical-vs-quantum "
+        note = (f"LIVE result for {participant.name} ({mode} arm) on the {bank_note}. This n "
+                f"is a pilot-scale sanity check, NOT evidence: the classical-vs-quantum "
                 f"(M1-vs-M2) verdict needs the pre-registered N (~6,400/order) — at small "
                 f"n a classical order effect can masquerade as quantum (PREREG_P3_2M.md).")
     print(note)
