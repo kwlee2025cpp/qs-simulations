@@ -159,13 +159,14 @@ class GeminiParticipant(_HTTPParticipant):
 
 
 class GrokParticipant(_HTTPParticipant):
-    # OpenAI-compatible. Pin the exact available chat model id in the live filing.
-    # Grok couples reasoning to the MODEL ID (no per-call thinking flag): the pilot's
-    # "grok-3" resolved to a reasoning model. So the thinking FACTOR is realized by a swap:
-    # direct arm -> default_model (a non-reasoning id), thinking arm -> reasoning_model.
-    # BOTH ids must be pinned against xAI's current model list at filing. [verify]
-    default_model = "grok-3"          # [verify] confirm this is the NON-reasoning id
-    reasoning_model: str | None = None  # [verify] pin a reasoning-capable id; None => toggle no-op
+    # OpenAI-compatible. Grok couples reasoning to the MODEL ID (the pilot's "grok-3"
+    # resolved to a reasoning model), so the thinking FACTOR is a clean single-base-model
+    # swap: direct arm -> default_model (non-reasoning), thinking arm -> reasoning_model.
+    # The grok-4-fast pair is the same base model with the mode chosen by the id suffix —
+    # the cleanest way to isolate the reasoning factor. Confirm both in the xAI console
+    # before the run (the filing pledges version-pinning).
+    default_model = "grok-4-fast-non-reasoning"            # direct arm (reasoning OFF)
+    reasoning_model: str | None = "grok-4-fast-reasoning"  # thinking arm (same base, reasoning ON)
     env_names = ("XAI_API_KEY", "INPUT_GROK-API-KEY")
     supports_logprobs = True   # OpenAI-style logprobs/top_logprobs — confirm via probe
 
