@@ -7,7 +7,7 @@ authors:
     given-names: Kangwon
     email: kangwon.lee@ieee.org
     affiliation: "Tech University of Korea (TU Korea)"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO: confirm ORCID before the Zenodo DOI is minted
+    orcid: "https://orcid.org/0009-0001-0997-099X"
 license: MIT
 repository-code: "https://github.com/kwlee2025cpp/qs-simulations"
 keywords:
