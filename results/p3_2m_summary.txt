@@ -14,6 +14,12 @@ RECOVERY (fraction of studies where the generating model is recovered):
 Target recovery: 80% for all three models.
 PASS — QQ-equality test discriminates M0/M1/M2; pre-registered N = 6400 (respondents x item-pairs per order).
 
+CONFUSION MATRIX at the pre-registered N=6400/order (row=generating model, col=classified as):
+            ->M0    ->M1    ->M2
+   gen M0 |  0.95   0.01   0.05
+   gen M1 |  0.00   0.96   0.04
+   gen M2 |  0.00   0.05   0.95
+
 Interpretation: this fixes the sample size for the LIVE Tier-A study and
 confirms the parameter-free QQ test can tell a quantum-like order effect
 (M2) from a classical one (M1) and from no order effect (M0). It does NOT

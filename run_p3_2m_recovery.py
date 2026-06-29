@@ -20,7 +20,8 @@ What it does:
 Outputs (results/):
   p3_2m_recovery.csv      recovery rate per (generating model, N)
   p3_2m_recovery.png      recovery curves + the true-q bar
-  p3_2m_summary.txt       verdict + pre-registered N
+  p3_2m_confusion.png     QQ-classifier confusion matrix at the pre-registered N
+  p3_2m_summary.txt       verdict + pre-registered N + confusion matrix
 
 Deterministic given SEED.
 """
@@ -119,6 +120,41 @@ def main() -> None:
     except Exception as e:  # pragma: no cover
         print(f"(figure skipped: {e})")
 
+    # ---- confusion matrix at the pre-registered N (figure + text) ----------------
+    # Answers a standard reviewer ask: at the chosen N, how often is each generating
+    # process classified as each label? The off-diagonal of the M1 row is the
+    # "false-quantum" leakage (M1 mislabeled M2).
+    confusion_txt = ""
+    if pre_reg_n is not None:
+        labels = ("M0", "M1", "M2")
+        byk = {(g, n): (m0, m1, m2) for (g, n, _r, m0, m1, m2) in rows}
+        cm = [list(byk[(g, pre_reg_n)]) for g in labels]   # rows=generating, cols=classified
+        confusion_txt = (
+            f"CONFUSION MATRIX at the pre-registered N={pre_reg_n}/order "
+            f"(row=generating model, col=classified as):\n"
+            "            ->M0    ->M1    ->M2\n" +
+            "\n".join(f"   gen {g} | " + "  ".join(f"{v:5.2f}" for v in cm[i])
+                      for i, g in enumerate(labels)) + "\n\n")
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            arr = np.array(cm)
+            fig, ax = plt.subplots(figsize=(4.6, 4.2))
+            ax.imshow(arr, cmap="Blues", vmin=0, vmax=1)
+            ax.set_xticks(range(3)); ax.set_xticklabels([f"→{l}" for l in labels])
+            ax.set_yticks(range(3)); ax.set_yticklabels(labels)
+            ax.set_xlabel("classified as"); ax.set_ylabel("generating model")
+            ax.set_title(f"QQ-classifier confusion @ N={pre_reg_n}/order")
+            for i in range(3):
+                for j in range(3):
+                    ax.text(j, i, f"{arr[i, j]:.2f}", ha="center", va="center",
+                            color="white" if arr[i, j] > 0.5 else "#222", fontsize=11)
+            fig.tight_layout()
+            fig.savefig(os.path.join(RESULTS, "p3_2m_confusion.png"), dpi=130)
+        except Exception as e:  # pragma: no cover
+            print(f"(confusion figure skipped: {e})")
+
     # ---- summary -----------------------------------------------------------------
     verdict = (f"PASS — QQ-equality test discriminates M0/M1/M2; pre-registered "
                f"N = {pre_reg_n} (respondents x item-pairs per order)."
@@ -131,6 +167,7 @@ def main() -> None:
                          " | ".join(f"{r:6.2f}" for r in rec[m]) for m in ("M0", "M1", "M2")) +
                f"\n\nTarget recovery: {RECOVERY_TARGET:.0%} for all three models.\n" +
                verdict + "\n\n" +
+               confusion_txt +
                "Interpretation: this fixes the sample size for the LIVE Tier-A study and\n"
                "confirms the parameter-free QQ test can tell a quantum-like order effect\n"
                "(M2) from a classical one (M1) and from no order effect (M0). It does NOT\n"
