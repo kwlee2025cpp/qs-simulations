@@ -1,0 +1,31 @@
+SESOI POWER CURVE for the powered Tier-A run (SEED=20260629, 1000 reps/cell, target 80% M1 recovery)
+  fixed: a=0.6, b=0.35, c_neg=0.05; c_pos swept to vary the true QQ residual |q| = |(c_pos-c_neg)(b-a)|
+
+  c_pos | delta_c | |true q| | order-eff | N(per order) for 80% M1 | detect-order N
+  ------+---------+----------+-----------+-------------------------+--------------
+  0.07  |  0.02   |  0.0050  |  0.022    |        >51200           |    7481
+  0.09  |  0.04   |  0.0100  |  0.034    |         51200           |    3154
+  0.12  |  0.07   |  0.0175  |  0.052    |         12800           |    1361
+  0.15  |  0.10   |  0.0250  |  0.070    |          6400           |     758
+  0.18  |  0.13   |  0.0325  |  0.088    |          6400           |     483
+  0.24  |  0.19   |  0.0475  |  0.124    |          3200           |     247
+  0.30  |  0.25   |  0.0625  |  0.160    |          1600           |     150
+  0.40  |  0.35   |  0.0875  |  0.220    |           800           |      80
+
+How to read this:
+  * Pick the SESOI = the smallest CLASSICAL QQ-violation |q| you refuse to miss
+    (i.e. the most quantum-LOOKING classical order effect you still want to catch).
+  * N(per order) in that row is the pre-registered powered sample size; double it
+    for both asking orders, then multiply by 2 questions/session for the API budget.
+  * As |q| -> 0 the M1 process becomes indistinguishable from M2 (quantum) at any
+    feasible N -- this is the 'false-quantum' boundary: under-powering biases toward
+    wrongly crowning the quantum model. So the SESOI must be set strictly > 0.
+  * 'detect-order N' is the (much smaller) analytic N merely to DETECT the order
+    effect (reject M0). It is NOT the binding constraint -- the pilot's large order
+    effects already clear it. The QQ-residual resolution (the M1-vs-M2 column) binds.
+
+Pilot linkage (honest): the n=16 pilot fixes nothing quantitative here. It rules out
+M0 cheaply (order effects were large) but cannot estimate q at n=16, so we power for a
+chosen SESOI on q rather than back N out of the pilot. With LLMs N is cheap, so a small
+SESOI (a tight |q|) is affordable; the recovery sim's q=0.0325 row is one such choice.
+This says nothing about which process real LLMs realize -- that is the live run.

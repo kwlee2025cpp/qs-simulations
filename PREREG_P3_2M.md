@@ -35,12 +35,22 @@ the generating process, and fix the sample size. Three generative models
 - The pre-registered N depends on the **smallest classical QQ-violation we insist on
   detecting** (here `q≈0.03`), exactly analogous to a human study's SESOI. With LLMs,
   large N is cheap, so we pre-commit to N ≥ 6,400/order (and report the achieved power).
+- **Power curve (RUN; `run_p3_2m_power.py`).** N as a function of that SESOI, re-derived
+  under an independent seed. It **cross-checks** Part A at `|q|=0.0325 → N≈6,400/order`, and
+  gives, per order: `|q|=0.088→800`, `0.063→1,600`, `0.048→3,200`, `0.025→6,400`,
+  `0.018→12,800`, `0.010→~51,200`; `|q|≲0.005` is **unrecoverable at any feasible N** (the
+  false-quantum boundary). Merely *detecting* the order effect needs far less (≈480/order at
+  `|q|=0.0325`), so the **QQ-residual resolution binds**, not order detection. Default SESOI:
+  `|q|=0.025` (N=6,400/order), fixed at filing.
 
 ## Part B — live Tier-A study spec (NOT yet run; needs model access)
 
 **Participants ("the society").** ≥3 model families × ≥2 sizes, **version-pinned**
 (exact model IDs + decoding settings locked in the filing). Each (model × temperature)
-is a participant stratum; the panel is the "society."
+is a participant stratum; the panel is the "society." **Reasoning mode (direct vs. extended
+thinking) is a pre-registered factor crossed with order**, because the n=16 machinery pilot was
+confounded by inconsistent thinking (the one reasoning model looked no-effect where two direct
+models looked quantum-like); the QQ test is read per (model × mode), never pooled.
 
 **Instrument.** A bank of paired binary attitude items in the canonical QQ format,
 **including novel/held-out pairs absent from the QQ literature** (contamination guard).
@@ -58,6 +68,19 @@ reliable order effect → **inconclusive, not a quantum win.** Publish either wa
 model class — POVM models can violate QQ, and a context-expanded classical model can
 mimic it; so a pass is "consistent with non-commutative structure," not "no classical
 model could." Machines are not humans: this complements, never replaces, the human P3.2.
+
+## Part C — concordance with human benchmarks (the human-relevance bridge)
+
+A Tier-A result is a fact about *machines*. It bears on the human framework only if the panel
+is a faithful **behavioral** model of the human effect, which Part C **tests rather than
+assumes**: on **novel** items (canonical items only as a memorization control), does the panel
+reproduce the established human pattern — primarily QQ-equality + the assimilation/contrast
+order-effect taxonomy (Wang et al. 2014), secondarily the conjunction fallacy and anchoring?
+Concordance is scored per (model family × mode), with matches and misses listed item by item;
+a failure does **not** void Tier A, it **bounds** it to a machine-only result. Concordance is
+**behavioral, not mechanistic**; the decisive test is a **matched human + LLM run** on identical
+novel items (the human half carries the IRB, via the prose repo's PreReg 3). Full spec:
+`pre-registrations.md` §4.8.
 
 ## Respecting the LLM participants (a design constraint, not a footnote)
 
@@ -83,7 +106,8 @@ models as **participants**, not disposable tools:
 
 ```
 conda env create -f environment.yml          # conda-forge; env "qs-sim"
-conda run -n qs-sim python run_p3_2m_recovery.py
+conda run -n qs-sim python run_p3_2m_recovery.py    # recovery: fixes N at one SESOI
+conda run -n qs-sim python run_p3_2m_power.py        # SESOI power curve: N vs |q|
 ```
 
-Deterministic given the seed in `run_p3_2m_recovery.py`. No network, no LLM, no cost.
+Deterministic given the seeds in those scripts. No network, no LLM, no cost.
