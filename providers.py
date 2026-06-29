@@ -113,7 +113,7 @@ _PROBE_INSTR = " Answer with exactly one word: yes or no."
 
 
 class GeminiParticipant(_HTTPParticipant):
-    default_model = "gemini-2.5-flash"
+    default_model = "gemini-2.5-flash"   # [verify] pin against Google's current model list at filing
     env_names = ("GEMINI_API_KEY", "INPUT_GEMINI-API-KEY")
     supports_logprobs = True   # responseLogprobs (model-dependent) — confirm via probe
 
@@ -196,7 +196,7 @@ class GrokParticipant(_HTTPParticipant):
 
 
 class ClaudeParticipant(_HTTPParticipant):
-    default_model = "claude-sonnet-4-6"
+    default_model = "claude-sonnet-4-6"   # [verify] pin against Anthropic's current model list at filing
     env_names = ("ANTHROPIC_API_KEY", "INPUT_CLAUDE_API_KEY")
 
     def _build(self, messages):
